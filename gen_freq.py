@@ -2,7 +2,7 @@
 Generating grid netcdf from
 'CiclonesTropicales1851_2016_V4_version_final.nc'
 date reference: 1851/01/01
-output filename: ciclobes_traj.nc
+output filename: ciclones_freq.nc
 '''
 from netCDF4 import Dataset
 from netCDF4 import chartostring 
