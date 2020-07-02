@@ -1,8 +1,8 @@
 '''
-Generating trajectory file from 
+Generating point file from
 'CiclonesTropicales1851_2016_V4_version_final.nc'
 date reference: 1851/01/01
-output filename: ciclones_traj.nc
+output filename: ciclones_point.nc
 '''
 from netCDF4 import Dataset
 from netCDF4 import chartostring 
@@ -11,33 +11,106 @@ import numpy as np
 import datetime as dt
 
 filename='CiclonesTropicales1851_2016_V4_version_final.nc'
-ofilename='ciclones_traj.nc'
+ofilename='ciclones_point.nc'
 with Dataset(filename,'r') as root:
-    nombres=root['nombre_ciclones'][:]
-    cat=root['categoria_registro'][:]
-    wind=root['viento_sostenido_registro'][:]
-    press=root['presion_central_registro'][:]
-    lat=root['latitud_registro'][:]
-    lon=root['longitud_registro'][:]
-    time=root['fecha_registro_numerico'][:]
+    coords=root['coordenadas_por_ciclon'][:]
     xtime=root['fechas_registro_calendario'][:]
-#time correction
-#time-=367
-print('nciclo:', nombres.shape)
-print('cat:', cat.shape, 'lat:',lat.shape, 'lon:',lon.shape, 'xtime:',xtime.shape)
-#trajectory dimension
-ntraj=len(nombres.T)
-#calculating row_size
-row_size=[]
-for idata in range(ntraj):
-    i_size=np.argwhere(np.isnan(lat.T[idata]))[0]
-    row_size.append(i_size[0])
+obs=len(coords.T)
+with Dataset(ofilename,'w', format="NETCDF4_CLASSIC") as root:
+    #metadata
+    root.title="Ciclones Tropicales del Golfo de México"
+    root.summary="Información sobre Ciclones Tropicales del GoM en puntos"
+    root.comment="Procesamiento de los datos HURDAT2 del National Hurricane Center para el Golfo de México. Periodo:1851:2016. Puntos correspondientes a primer impacto, segundo impacto y primer registro"
+    root.featureType="point"
+    root.cdm_data_type="Point"
+    root.history='adapted to CF using gen_point.py'
+    #root.calendar="gregorian"
+    root.geospatial_lat_min="8.5"
+    root.geospatial_lat_max="32.585857"
+    root.geospatial_lon_min="-97.883835"
+    root.geospatial_lon_max="0"
+    #root.geospatial_lat_units="degrees_north"
+    #root.geospatial_lon_units="degrees_east"
+    #root.geospatial_lat_resolution="0.1"
+    #root.geospatial_lon_resolution="0.1"
+    #root.geospatial_bounds_crs= "EPSG:4326"
+    #dimensions
+    root.createDimension('obs',obs)
 
-print('row_size', len(row_size))
-#obs dimension
-obs= np.sum(row_size)
-print('Dimensions:')
-print('traj:',ntraj,'obs:',obs)
+    #root.createVariable('time','f4',('obs'))
+    #root['time'][:]=new_time
+    #root['time'].standard_name='time'
+    #root['time'].long_name='time'
+    #root['time'].units='hours since 1851-01-01 00:00:00'
+    #root['time'].axis='T'
+
+    root.createVariable('latitude1','f4',('obs'))
+    root['latitude1'][:]=coords[1]
+    root['latitude1'].standard_name='latitude'
+    root['latitude1'].long_name='latitud por punto'
+    root['latitude1'].units='degrees_north'
+    root['latitude1'].axis='Y'
+
+    root.createVariable('longitude1','f4',('obs'))
+    root['longitude1'][:]=coords[0]
+    root['longitude1'].standard_name='longitude'
+    root['longitude1'].long_name='longitud por punto'
+    root['longitude1'].units='degrees_east'
+    root['longitude1'].axis='X'
+
+    varname='primer_impacto'
+    root.createVariable(varname,'i1',('obs'))
+    root[varname][:]=np.ones(obs)
+    root[varname].long_name='punto de primer impacto'
+    root[varname].units='1'
+    root[varname].coverage_content_type='physicalMeasurement'
+    root[varname].coordinates="longitude1 latitude1"
+
+    root.createVariable('latitude2','f4',('obs'))
+    root['latitude2'][:]=coords[3]
+    root['latitude2'].standard_name='latitude'
+    root['latitude2'].long_name='latitud por punto'
+    root['latitude2'].units='degrees_north'
+    root['latitude2'].axis='Y'
+
+    root.createVariable('longitude2','f4',('obs'))
+    root['longitude2'][:]=coords[2]
+    root['longitude2'].standard_name='longitude'
+    root['longitude2'].long_name='longitud por punto'
+    root['longitude2'].units='degrees_east'
+    root['longitude2'].axis='X'
+
+    varname='segundo_impacto'
+    root.createVariable(varname,'i1',('obs'))
+    root[varname][:]=np.ones(obs)
+    root[varname].long_name='punto de segundo impacto'
+    root[varname].units='1'
+    root[varname].coverage_content_type='physicalMeasurement'
+    root[varname].coordinates="longitude2 latitude2 "
+
+    root.createVariable('latitude3','f4',('obs'))
+    root['latitude3'][:]=coords[5]
+    root['latitude3'].standard_name='latitude'
+    root['latitude3'].long_name='latitud por punto'
+    root['latitude3'].units='degrees_north'
+    root['latitude3'].axis='Y'
+
+    root.createVariable('longitude3','f4',('obs'))
+    root['longitude3'][:]=coords[4]
+    root['longitude3'].standard_name='longitude'
+    root['longitude3'].long_name='longitud por punto'
+    root['longitude3'].units='degrees_east'
+    root['longitude3'].axis='X'
+
+    varname='primer_registro'
+    root.createVariable(varname,'i1',('obs'))
+    root[varname][:]=np.ones(obs)
+    root[varname].long_name='punto de primer registro'
+    root[varname].units='1'
+    root[varname].coverage_content_type='physicalMeasurement'
+    root[varname].coordinates="longitude3 latitude3 "
+
+exit(0)
 #extract and concat vars
 def concat_var(var, row_size):
     new_var=var[0][:row_size[0]]
@@ -89,8 +162,8 @@ with Dataset(ofilename,'w', format="NETCDF4_CLASSIC") as root:
     root.title="Trayectorias de Ciclones Tropicales del Golfo de México"
     root.summary="Información sobre Ciclones Tropicales del GoM en trayectorias"
     root.comment="Procesamiento de los dato HURDAT2 del National Hurricane Center para el Golfo de México. Periodo:1851:2016"
-    root.featureType="trajectory"
-    root.history='adapted to CF using gen_ciclo.py'
+    root.featureType="point"
+    root.history='adapted to CF using gen_point.py'
     #root.calendar="gregorian"
     root.geospatial_lat_min="8.5"
     root.geospatial_lat_max="81.0"
